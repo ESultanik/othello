@@ -13,7 +13,7 @@ his/her othello-playing agent.  This filename does not need to be
 unique, although it is wise to give it a meaningful name.  For
 example:
 
-  $ emacs EvansOthelloPlayer.java
+  $ vim EvansOthelloPlayer.java
 
 The combination of the directory name and the othello-playing agent's
 class name should be able to provide the professor with enough
@@ -60,6 +60,14 @@ named after the directory you created above.
   $ ls lib
   example.jar  othello.jar  sultanik.jar
 
+The reason why each agent is compiled to a separate JAR is so that
+students can optionally share their compiled players with each other
+without having to worry about divulging their code.  (Sure, there are
+Java bytecode decompilers, but I think it would take more effort to
+reverse engineer another student's agent than to program one's own
+agent in the first place!)  Feel free to share your agents with each
+other as JARs to have them play against each other.
+
 Note that running `make' will rebuild a lot of the code, not just your
 own.  This can often be time consuming and unnecessary.  To compile
 just your code, simply run:
@@ -78,7 +86,7 @@ A script is also provided for convenience called `othello':
   $ ./othello
 
 This will run Othello with a graphical user interface.  If you are
-running the program "headless" (e.g. over SSH), a console-based user
+running the program "headless" (e.g., over SSH), a console-based user
 interface is also available.  This can be invoked using the command
 line option `-nw':
 
@@ -104,6 +112,15 @@ the classpath.
 For a complete list of command line options, simply run
 
   $ ./othello -nw
+
+For those who prefer an IDE over a good old text editor, an Eclipse
+project is included in this directory.  Simply open Eclipse and select
+File -> Import -> Existing Projects into Workspeace and select this
+directory as the root directory.  Note, however, that I have not yet
+set up the Eclipse project to correctly build separate JARs for the
+Othello classes and individual student's players.  Therefore, if you
+would like to share your compiled othello player with a classmate, it
+is easiest to build its JAR using the Makefile.
 
 A JavaDoc is automatically built each time your code is recompiled.
 To manually force a rebuild of the JavaDoc, run:
