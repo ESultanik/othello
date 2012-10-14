@@ -7,14 +7,14 @@ package edu.drexel.cs.ai.othello;
  * @author <a href="http://www.sultanik.com" target="_blank">Evan A. Sultanik</a>
  */
 public class Square {
-    int row, col;
-    static final String colnames[] = {"a","b","c","d","e","f","g","h"};
+	int row, col;
+	static final String colnames[] = {"a","b","c","d","e","f","g","h"};
 
-    /**
-     * Constructs a new <code>Square</code> from a string
-     * representation of the row and column.  Rows are numbered
-     * <code>0&ndash;7</code> from top to bottom and columns are
-     * labeled <code>a&ndash;h</code> from left to right.
+	/**
+	 * Constructs a new <code>Square</code> from a string
+	 * representation of the row and column.  Rows are numbered
+	 * <code>0&ndash;7</code> from top to bottom and columns are
+	 * labeled <code>a&ndash;h</code> from left to right.
 <p><pre>
     a    b    c    d    e    f    g    h
   -----------------------------------------
@@ -35,111 +35,111 @@ public class Square {
 7 | a7 | b7 | c7 | d7 | e7 | f7 | g7 | h7 |
   -----------------------------------------
 </pre></p>
-     * <p>The row and column may occur in any order; "<code>c6</code>" is equivalent to "<code>6c</code>".</p>
-     * @throws IllegalArgumentException if a row and column could not be parsed from the string.
-     */
-    public Square(String square) throws IllegalArgumentException {
-	boolean error = false;
-	if(square.length() != 2)
-	    error = true;
-	else {
-	    try {
-		square = square.toLowerCase();
-		char c1 = square.charAt(0);
-		char c2 = square.charAt(1);
-		row = intValue(c1);
-		if(row >= 0) {
-		    col = colIdxFromName(c2);
-		} else {
-		    row = intValue(c2);
-		    col = colIdxFromName(c1);
+	 * <p>The row and column may occur in any order; "<code>c6</code>" is equivalent to "<code>6c</code>".</p>
+	 * @throws IllegalArgumentException if a row and column could not be parsed from the string.
+	 */
+	public Square(String square) throws IllegalArgumentException {
+		boolean error = false;
+		if(square.length() != 2)
+			error = true;
+		else {
+			try {
+				square = square.toLowerCase();
+				char c1 = square.charAt(0);
+				char c2 = square.charAt(1);
+				row = intValue(c1);
+				if(row >= 0) {
+					col = colIdxFromName(c2);
+				} else {
+					row = intValue(c2);
+					col = colIdxFromName(c1);
+				}
+			} catch(Exception e) {
+				error = true;
+			}
+			if(row < 0 || col < 0 || row >= 8 || col >= 8)
+				error = true;
 		}
-	    } catch(Exception e) {
-		error = true;
-	    }
-	    if(row < 0 || col < 0 || row >= 8 || col >= 8)
-		error = true;
+
+		if(error)
+			throw new IllegalArgumentException("Square definition \"" + square + "\" is not properly formatted.");
 	}
 
-	if(error)
-	    throw new IllegalArgumentException("Square definition \"" + square + "\" is not properly formatted.");
-    }
-
-    /**
-     * Constructs a new <code>Square</code> from a given row and
-     * column in the board.  Note that <em>no</em> checking is done to
-     * ensure that the given arguments are within the bounds of the
-     * standard 8<code>x</code>8 othello board.  Also note that the
-     * rows and columns are indexed from zero.
-     * @see #Square(String)
-     */
-    public Square(int row, int col) {
-	this.row = row;
-	this.col = col;
-    }
-
-    int colIdxFromName(char c) {
-	for(int i=0; i<colnames.length; i++) {
-	    if(colnames[i].equals(new String(new char[]{c})))
-		return i;
+	/**
+	 * Constructs a new <code>Square</code> from a given row and
+	 * column in the board.  Note that <em>no</em> checking is done to
+	 * ensure that the given arguments are within the bounds of the
+	 * standard 8<code>x</code>8 othello board.  Also note that the
+	 * rows and columns are indexed from zero.
+	 * @see #Square(String)
+	 */
+	public Square(int row, int col) {
+		this.row = row;
+		this.col = col;
 	}
-	return -1;
-    }
 
-    int intValue(char c) {
-	int v = -1;
-	try {
-	    v = Integer.parseInt(new String(new char[]{c}));
-	} catch(NumberFormatException nfe) {
-	    v = -1;
+	int colIdxFromName(char c) {
+		for(int i=0; i<colnames.length; i++) {
+			if(colnames[i].equals(new String(new char[]{c})))
+				return i;
+		}
+		return -1;
 	}
-	return v;
-    }
 
-    /**
-     * Returns the row of this square.
-     */
-    public int getRow() {
-	return row;
-    }
+	int intValue(char c) {
+		int v = -1;
+		try {
+			v = Integer.parseInt(new String(new char[]{c}));
+		} catch(NumberFormatException nfe) {
+			v = -1;
+		}
+		return v;
+	}
+
+	/**
+	 * Returns the row of this square.
+	 */
+	public int getRow() {
+		return row;
+	}
 
 
-    /**
-     * Returns the column of this square.
-     */
-    public int getCol() {
-	return col;
-    }
+	/**
+	 * Returns the column of this square.
+	 */
+	public int getCol() {
+		return col;
+	}
 
-    /**
-     * Returns a string representation of this square.
-     * @see #Square(String)
-     */
-    public String toString() {
-	return colnames[col] + Integer.toString(row);
-    }
+	/**
+	 * Returns a string representation of this square.
+	 * @see #Square(String)
+	 */
+	public String toString() {
+		return colnames[col] + Integer.toString(row);
+	}
 
-    /**
-     * Returns <code>true</code> if and only if the given object is
-     * <code>instanceof</code> <code>Square</code> and if
-     * <code>o</code> points to the same row and column as
-     * <code>this</code>.
-     */
-    public boolean equals(Object o) {
-	if(!(o instanceof Square))
-	    return false;
-	Square s = (Square)o;
-	return (s.row == row && s.col == col);
-    }
+	/**
+	 * Returns <code>true</code> if and only if the given object is
+	 * <code>instanceof</code> <code>Square</code> and if
+	 * <code>o</code> points to the same row and column as
+	 * <code>this</code>.
+	 */
+	public boolean equals(Object o) {
+		if(!(o instanceof Square))
+			return false;
+		Square s = (Square)o;
+		return (s.row == row && s.col == col);
+	}
 
-    /**
-     * Returns a unique idendentifier for this square.  It is ensured
-     * that <code>x.hashCode()==y.hashCode()</code> implies
-     * <code>x.equals(y)</code>.
-     *
-     * @see #equals(Object)
-     */
-    public int hashCode() {
-	return 9*row + col;
-    }
+	/**
+	 * Returns a unique idendentifier for this square.  It is ensured
+	 * that <code>x.hashCode()==y.hashCode()</code> implies
+	 * <code>x.equals(y)</code>.
+	 *
+	 * @see #equals(Object)
+	 */
+	public int hashCode() {
+		return 9*row + col;
+	}
 }
