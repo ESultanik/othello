@@ -1,0 +1,22 @@
+Othello Game for Introductory Artificial Intelligence Classes
+
+version 1.1
+	New Features:
+	* Infinite deadlines now allowed as command line option
+	  (and it is the default)
+	
+	Bug Fixes:
+	* Fixed hashing bug in GameState
+	
+	API Changes:
+	* None, yet...
+	
+version 1.0
+	New Features:
+	* This is the first official release; everything's new!
+
+	Bug Fixes:
+	* None, yet...
+
+	API Changes:
+	* None, yet...
