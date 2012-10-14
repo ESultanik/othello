@@ -22,11 +22,11 @@ public class Othello {
 	/**
 	 * The release version of this code.
 	 */
-	public static final String VERSION  = "1.1";
+	public static final String VERSION  = "2.0";
 	/**
 	 * The release date of this code.
 	 */
-	public static final String REV_DATE = "2006-11-05";
+	public static final String REV_DATE = "2012-10-14";
 
 	/**
 	 * Constructs a new othello game with a specific seed to the random number generator.
@@ -362,7 +362,7 @@ public class Othello {
 
 	static String getVersionInfo() {
 		return "Othello Version " + VERSION + " " + REV_DATE + "\n" +
-				"Copyright 2006--2007, Evan A. Sultanik" + "\n" +
+				"Copyright 2006--2012, Evan A. Sultanik" + "\n" +
 				"http://www.sultanik.com/" + "\n" + "\n";
 	}
 
