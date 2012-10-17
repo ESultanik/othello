@@ -22,11 +22,11 @@ public class Othello {
 	/**
 	 * The release version of this code.
 	 */
-	public static final String VERSION  = "2.0";
+	public static final String VERSION  = "2.1";
 	/**
 	 * The release date of this code.
 	 */
-	public static final String REV_DATE = "2012-10-14";
+	public static final String REV_DATE = "2012-10-17";
 
 	/**
 	 * Constructs a new othello game with a specific seed to the random number generator.
