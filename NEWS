@@ -1,5 +1,10 @@
 Othello Game for Introductory Artificial Intelligence Classes
 
+2.1 (2012-10-17):
+    Evan: Minor bug fixes related to zombie threads and
+          also added a means for agents to better handle
+          the case when they miss a deadline.
+
 2.0 (2012-10-14):
 	Evan: Updated release with an Eclipse project and
 	      code updated to the latest Java compiler.

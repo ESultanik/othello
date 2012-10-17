@@ -1,16 +1,30 @@
 Othello Game for Introductory Artificial Intelligence Classes
 
+version 2.1
+	New Features:
+	* Agents can now incrementally set their best move so that
+	  if they miss their deadline that is the move that will be chosen.
+	
+	Bug Fixes:
+	* Fixed a bug that allowed zombie threads to stick around if an
+	  agent missed its deadline.
+
+    API Changes:
+    * Nothing other than the addition of the new API calls for the
+      incremental best move setting.  An example of this new API was
+      added to the ExampleOthelloPlayer.
+
 version 2.0
 	New Features:
 	* An Eclipse project for the code was created.
 
-        Bug Fixes:
-        * Removed an unncessary inner loop in the successor
-          function.
+    Bug Fixes:
+    * Removed an unncessary inner loop in the successor
+      function.
 	* Fixed a number of compiler warnings.
 
-        API Changes:
-        * None, yet...
+    API Changes:
+    * None, yet...
 
 version 1.1
 	New Features:

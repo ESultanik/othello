@@ -26,6 +26,8 @@ public abstract class OthelloPlayer {
 	private String name;
 	private Logger logger;
 	private Date currentDeadline;
+	private Square tempMove;
+	private Thread currentThread;
 
 	/**
 	 * Creates a new Othello Player
@@ -34,6 +36,7 @@ public abstract class OthelloPlayer {
 		this.name = name;
 		logger = null;
 		currentDeadline = null;
+		currentThread = null;
 	}
 
 	/**
@@ -52,10 +55,37 @@ public abstract class OthelloPlayer {
 	}
 
 	Square getMoveInternal(GameState currentState, Date deadline) {
+		if(currentThread != null)
+			throw new IllegalStateException("getMoveInternal(...) is already being called by another thread (" + currentThread + ")");
 		currentDeadline = deadline;
+		tempMove = null;
+		currentThread = Thread.currentThread();
 		Square move = getMove(currentState, deadline);
+		currentThread = null;
 		currentDeadline = null;
 		return move;
+	}
+	
+	/**
+	 * Register's the best move the agent has found so far in its search.  If the agent runs out of time, this is the move that will be used for the agent.  If no move is registered and the agent misses its deadline, then a move will be chosen at random.
+	 * 
+	 * @param bestMove The best move that the agent has found so far.
+	 * @throws IllegalStateException if {@link #getMove(GameState, Date)} is not currently being run, or if it is being run from a different thread.
+	 */
+	protected void registerCurrentBestMove(Square bestMove) throws IllegalStateException {
+		if(currentThread == null)
+			throw new IllegalStateException("This OthelloPlayer is not currently running getMove(...)!");
+		else if(currentThread != Thread.currentThread())
+			throw new IllegalStateException("registerCurrentBestMove(...) can only be called from the thread that is currently running getMove(...): " + currentThread);
+		else if(this.getMillisUntilDeadline() >= 0)
+			tempMove = bestMove; /* only set the move if the deadline hasn't yet expired */
+	}
+	
+	/**
+	 * Returns The best move that the agent has found so far, as registered using {@link #registerCurrentBestMove(Square)}.  If no move has been registered, or if {@link #getMove(GameState, Date)} is not currently running, then <code>null</code> is returned.
+	 */
+	protected Square getCurrentBestMove() {
+		return tempMove;
 	}
 
 	void setLogger(Logger logger) {

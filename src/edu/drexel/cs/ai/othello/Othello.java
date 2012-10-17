@@ -95,6 +95,23 @@ public class Othello {
 			startTime = null;
 			endTime = null;
 		}
+		
+		public void terminate() {
+			long startTime = System.currentTimeMillis();
+			boolean printed = false;
+			while(thread != null && thread.isAlive()) {
+				if(!printed && System.currentTimeMillis() - startTime >= 3000) {
+					/* if we have been waiting for three seconds or longer... */
+					log("Waiting for the " + player.getName() + "'s thread to terminate...");
+					printed = true;
+				}
+				thread.interrupt(); /* wake up the thread if it is sleeping */
+				try {
+					thread.join(500);
+				} catch (InterruptedException e) {}
+			}
+			thread = null;
+		}
 
 		public Square getMove(int timeLimitSeconds) throws TimeoutException {
 			long sleepInterval = ((long)timeLimitSeconds * 1000) / 60;
@@ -108,7 +125,7 @@ public class Othello {
 				} catch(Exception e) {}
 				ui.updateTimeRemaining(player, (new Long((deadline.getTime() - (new Date()).getTime()) / 1000)).intValue());
 			}
-			thread = null;
+			terminate();
 			if(move == null)
 				throw new TimeoutException(player.getName() + " took to long to move!");
 			if(endTime == null) {
@@ -120,7 +137,7 @@ public class Othello {
 			}
 			return move;
 		}
-
+		
 		public long getElapsedMillis() {
 			if(endTime != null && startTime != null)
 				return endTime.getTime() - startTime.getTime();
@@ -131,9 +148,11 @@ public class Othello {
 		}
 
 		public void run() {
-			move = player.getMoveInternal(state, deadline);
+			Square m = player.getMoveInternal(state, deadline);
 			if(endTime == null)
 				endTime = new Date();
+			if(deadline == null || endTime.compareTo(deadline) <= 0)
+				move = m;
 			thread = null;
 		}
 	}
@@ -174,10 +193,15 @@ public class Othello {
 						move = ptt.getMove(turnDuration);
 					} catch(TimeoutException te) {
 						log(te);
-						Square moves[] = state.getValidMoves().toArray(new Square[0]);
-						int next = state.getRandom().nextInt(moves.length);
-						log("Randomly moving " + player.getName() + " to " + moves[next].toString() + "...");
-						move = moves[next];
+						/* did the agent register a best move?  if so, use that.  otherwise, move randomly */
+						move = ptt.player.getCurrentBestMove();
+						if(move == null || ptt.endTime.compareTo(ptt.deadline) > 0) {
+							Square moves[] = state.getValidMoves().toArray(new Square[0]);
+							int next = state.getRandom().nextInt(moves.length);
+							log("Randomly moving " + player.getName() + " to " + moves[next].toString() + "...");
+							move = moves[next];
+						} else
+							log("Using " + player.getName() + "'s best move: " + move);
 					}
 					if(state.getCurrentPlayer() == GameState.Player.PLAYER1) {
 						p1timeUsed += ptt.getElapsedMillis();
