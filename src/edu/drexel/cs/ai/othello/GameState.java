@@ -42,7 +42,8 @@ public class GameState implements Cloneable {
 		/**
 		 * Indicates that a square in the board is empty.
 		 */
-		EMPTY}
+		EMPTY
+	}
 
 	enum Direction {UP, DOWN, LEFT, RIGHT, UPLEFT, UPRIGHT, DOWNLEFT, DOWNRIGHT}
 

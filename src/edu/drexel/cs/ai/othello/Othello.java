@@ -195,7 +195,7 @@ public class Othello {
 						log(te);
 						/* did the agent register a best move?  if so, use that.  otherwise, move randomly */
 						move = ptt.player.getCurrentBestMove();
-						if(move == null || ptt.endTime.compareTo(ptt.deadline) > 0) {
+						if(move == null) {
 							Square moves[] = state.getValidMoves().toArray(new Square[0]);
 							int next = state.getRandom().nextInt(moves.length);
 							log("Randomly moving " + player.getName() + " to " + moves[next].toString() + "...");
