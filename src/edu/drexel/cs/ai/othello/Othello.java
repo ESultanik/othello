@@ -168,11 +168,20 @@ public class Othello {
 				log((state.getCurrentPlayer() == GameState.Player.PLAYER1 ? player1.getName() : player2.getName()) + " gets to go again!");
 			ui.handleStateUpdate(state);
 			OthelloPlayer player = (state.getCurrentPlayer() == GameState.Player.PLAYER1 ? player1 : player2);
-			boolean validMove;
+			boolean validMove = true;
 			do {
+				Square move = null;
+
+				if(!validMove && !(player instanceof HumanOthelloPlayer)) {
+					/* the AI player made an invalud move last try, so penalize it by moving it randomly */
+					Square moves[] = state.getValidMoves().toArray(new Square[0]);
+					int next = state.getRandom().nextInt(moves.length);
+					log("Randomly moving " + player.getName() + " to " + moves[next].toString() + "...");
+					move = moves[next];
+				}
+				
 				validMove = true;
 
-				Square move;
 				if(turnDuration <= 0 || player instanceof HumanOthelloPlayer) {
 					ui.updateTimeRemaining(player, -1); /* there is no limit for humans */
 					Date start = new Date();
@@ -187,7 +196,8 @@ public class Othello {
 						p2timeUsed += end.getTime() - start.getTime();
 						ui.updateTimeUsed(player, p2timeUsed);
 					}
-				} else {
+				} else if(move == null) {
+					/* if we didn't already move the AI player randomly... */
 					PlayerTimerThread ptt = new PlayerTimerThread(player, state);
 					try {
 						move = ptt.getMove(turnDuration);
