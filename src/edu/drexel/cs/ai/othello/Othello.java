@@ -19,7 +19,7 @@ public class Othello {
 	private GameState state;
 	private UserInterface ui;
 	private int turnDuration;
-	private JailSecurityManager jsm;
+	private static JailSecurityManager jsm = new JailSecurityManager();
 
 	/**
 	 * The release version of this code.
@@ -60,13 +60,25 @@ public class Othello {
 	}
 	
 	private static class JailSecurityManager extends SecurityManager {
-		HashSet<Thread> restrictedThreads;
+		private HashSet<Thread> restrictedThreads;
 		public JailSecurityManager() {
 			restrictedThreads = new HashSet<Thread>();
 		}
+		public void restrict(Thread thread) {
+			synchronized(restrictedThreads) {
+				restrictedThreads.add(thread);
+			}
+		}
+		public void unrestrict(Thread thread) {
+			synchronized(restrictedThreads) {
+				restrictedThreads.remove(thread);
+			}
+		}
 		private void validate(String error) {
-			if(restrictedThreads.contains(Thread.currentThread()))
-				throw new SecurityException(error);
+			synchronized(restrictedThreads) {
+				if(restrictedThreads.contains(Thread.currentThread()))
+					throw new SecurityException(error);
+			}
 		}
 		public void checkWrite(String filename) {
 			validate("You cannot write to any files!");
@@ -184,7 +196,7 @@ public class Othello {
 		}
 
 		public void run() {
-			jsm.restrictedThreads.add(thread);
+			jsm.restrict(thread);
 			Square m = null;
 			try {
 				m = player.getMoveInternal(state, deadline);
@@ -193,7 +205,7 @@ public class Othello {
 					endTime = new Date();
 				if(deadline == null || endTime.compareTo(deadline) <= 0)
 					move = m;
-				jsm.restrictedThreads.remove(thread);
+				jsm.unrestrict(thread);
 				thread = null;
 			}
 		}
