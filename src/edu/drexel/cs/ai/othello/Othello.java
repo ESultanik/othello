@@ -19,7 +19,7 @@ public class Othello {
 	private GameState state;
 	private UserInterface ui;
 	private int turnDuration;
-	private static JailSecurityManager jsm = new JailSecurityManager();
+	private static final JailSecurityManager jsm = new JailSecurityManager();
 
 	/**
 	 * The release version of this code.
@@ -55,7 +55,6 @@ public class Othello {
 			this.state = new GameState(seed);
 		else
 			this.state = new GameState();
-		jsm = new JailSecurityManager();
         System.setSecurityManager(jsm);
 	}
 	
