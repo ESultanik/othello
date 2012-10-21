@@ -103,6 +103,27 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 			}
 			p1selector = new JComboBox(possiblePlayers);
 			p2selector = new JComboBox(possiblePlayers);
+			ActionListener al = new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent event) {
+					JComboBox combo = (JComboBox)event.getSource();
+					String newName = combo.getSelectedItem().toString();
+					int i = newName.lastIndexOf('.');
+					if(i >= 0 && i < newName.length()-1)
+						newName = newName.substring(i+1);
+					if(combo == p1selector) {
+						if(p2name.getText().equals(newName))
+							newName = newName + " (2)";
+						p1name.setText(newName);
+					} else {
+						if(p1name.getText().equals(newName))
+							newName = newName + " (2)";
+						p2name.setText(newName);
+					}
+				}
+			};
+			p1selector.addActionListener(al);
+			p2selector.addActionListener(al);
 
 			JPanel selectorPanel = new JPanel();
 			selectorPanel.setLayout(new BoxLayout(selectorPanel, BoxLayout.Y_AXIS));
@@ -136,19 +157,26 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 			SpringUtilities.makeCompactGrid(p2form, 2, 2, 6,6,6,6);
 			player2.add(p2form);
 
+			p1selector.setSelectedIndex(p1selector.getSelectedIndex());
+			p2selector.setSelectedIndex(p2selector.getSelectedIndex());
+			
 			okayButton = new JButton("Start");
 			okayButton.addActionListener(this);
-
+			okayButton.setDefaultCapable(true);
+			
 			addWindowListener(this);
 
 			playerFields.add(player1);
 			playerFields.add(player2);
 			selectorPanel.add(playerFields);
 			selectorPanel.add(okayButton);
-
-			setLayout(new BorderLayout());
-			add(new JScrollPane(selectorPanel), BorderLayout.CENTER);
-			setSize(new Dimension(775, 150));
+			
+			JScrollPane jsp = new JScrollPane(selectorPanel);
+			add(jsp);
+			getRootPane().setDefaultButton(okayButton);
+			
+			Dimension d = jsp.getPreferredSize();
+			setSize(new Dimension((int)d.getWidth() + 25, (int)d.getHeight() + 25));
 			setVisible(true);
 		}
 
