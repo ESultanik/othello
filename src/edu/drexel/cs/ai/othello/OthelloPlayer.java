@@ -60,9 +60,13 @@ public abstract class OthelloPlayer {
 		currentDeadline = deadline;
 		tempMove = null;
 		currentThread = Thread.currentThread();
-		Square move = getMove(currentState, deadline);
-		currentThread = null;
-		currentDeadline = null;
+		Square move;
+		try {
+			move = getMove(currentState, deadline);
+		} finally {
+			currentThread = null;
+			currentDeadline = null;
+		}
 		return move;
 	}
 	

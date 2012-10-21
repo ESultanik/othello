@@ -3,6 +3,7 @@ package edu.drexel.cs.ai.othello;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -18,15 +19,16 @@ public class Othello {
 	private GameState state;
 	private UserInterface ui;
 	private int turnDuration;
+	private JailSecurityManager jsm;
 
 	/**
 	 * The release version of this code.
 	 */
-	public static final String VERSION  = "2.1";
+	public static final String VERSION  = "2.2";
 	/**
 	 * The release date of this code.
 	 */
-	public static final String REV_DATE = "2012-10-17";
+	public static final String REV_DATE = "2012-10-21";
 
 	/**
 	 * Constructs a new othello game with a specific seed to the random number generator.
@@ -53,8 +55,42 @@ public class Othello {
 			this.state = new GameState(seed);
 		else
 			this.state = new GameState();
+		jsm = new JailSecurityManager();
+        System.setSecurityManager(jsm);
 	}
-
+	
+	private static class JailSecurityManager extends SecurityManager {
+		HashSet<Thread> restrictedThreads;
+		public JailSecurityManager() {
+			restrictedThreads = new HashSet<Thread>();
+		}
+		private void validate(String error) {
+			if(restrictedThreads.contains(Thread.currentThread()))
+				throw new SecurityException(error);
+		}
+		public void checkWrite(String filename) {
+			validate("You cannot write to any files!");
+		}
+		public void checkDelete(String filename) {
+			validate("No files may be deleted!");
+		}
+		public void checkExec(String cmd) {
+			validate("This thread may not execute a subprocess!");
+		}
+		public void checkExit(int status) {
+			validate("This thread may not call System.exit()!");
+		}
+		public void checkLink(String lib) {
+			validate("This thread may not call native libraries!");
+		}
+		public void checkConnect(String host, int port) {
+			validate("This thread may not open sockets!");
+		}
+		public void checkAccess(Thread t) {
+			validate("This thread may not create or modify any threads, including itself.");
+		}
+	}
+        
 	/**
 	 * Attempts to instantiate a new {@link OthelloPlayer} with the
 	 * given <code>playerName</code> from the given class.
@@ -148,12 +184,18 @@ public class Othello {
 		}
 
 		public void run() {
-			Square m = player.getMoveInternal(state, deadline);
-			if(endTime == null)
-				endTime = new Date();
-			if(deadline == null || endTime.compareTo(deadline) <= 0)
-				move = m;
-			thread = null;
+			jsm.restrictedThreads.add(thread);
+			Square m = null;
+			try {
+				m = player.getMoveInternal(state, deadline);
+			} finally {
+				if(endTime == null)
+					endTime = new Date();
+				if(deadline == null || endTime.compareTo(deadline) <= 0)
+					move = m;
+				jsm.restrictedThreads.remove(thread);
+				thread = null;
+			}
 		}
 	}
 
@@ -197,6 +239,9 @@ public class Othello {
 						ui.updateTimeUsed(player, p2timeUsed);
 					}
 				} else if(move == null) {
+					/* request a garbage collection before we run the AI agent */
+					Runtime.getRuntime().gc();
+					
 					/* if we didn't already move the AI player randomly... */
 					PlayerTimerThread ptt = new PlayerTimerThread(player, state);
 					try {
@@ -281,7 +326,7 @@ public class Othello {
 		long seed = 0;
 		boolean seedSet = false;
 		int turnDuration = -1;
-
+		
 		for(int i=0; i<args.length; i++) {
 			if(!args[i].startsWith("-")) {
 				/**

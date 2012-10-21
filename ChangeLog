@@ -1,5 +1,19 @@
 Othello Game for Introductory Artificial Intelligence Classes
 
+version 2.2
+	New Features:
+	* Implemented a custom Java Security Manager to prevent agents
+	  from doing sneaky things like file I/O or spawning helper
+	  threads.
+	
+	Bug Fixes:
+	* Fixed a potential (but not observed) bug in the game engine
+	  that could cause a weird state, possibly inducing zombie threads,
+	  if an agent throws an uncaught exception in getMove(...).
+	  
+	API Changes:
+	* None.
+
 version 2.1
 	New Features:
 	* Agents can now incrementally set their best move so that
