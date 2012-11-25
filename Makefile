@@ -13,10 +13,16 @@ STUDENTS=$(subst CVS,,$(subst src/students/,,$(wildcard src/students/*)))
 STUDENT_FILES=$(foreach student,$(STUDENTS),$(wildcard src/students/$(student)/*.java))
 JAVA_FILES=$(foreach dir,$(DIRS),$(wildcard src/$(dir)/*.java))
 PACKAGES=$(subst /,.,$(DIRS)) $(subst /,.,$(foreach student,$(STUDENTS),students/$(student)))
-JARS=lib/othello.jar $(foreach student,$(STUDENTS),lib/$(student).jar)
+STUDENT_JARS=$(foreach student,$(STUDENTS),lib/$(student).jar)
+OTHELLO_JAR=lib/othello.jar
+JARS=$(OTHELLO_JAR) $(STUDENT_JARS)
+NON_STUDENT_JARS=$(wildcard externallibs/*.jar) $(OTHELLO_JAR)
 
 .PHONY : all
 all : othello javadoc $(JARS)
+
+print-%:
+	@echo $* = $($*)
 
 othello : $(JARS)
 	@echo 'for i in lib/*.jar' > $@
@@ -45,8 +51,11 @@ lib/othello.jar : lib build-othello
 	$(JAR) cmf .manifest.tmp lib/othello.jar -C classes edu
 	@rm -rf .manifest.tmp
 
-lib/%.jar : lib $(wildcard src/students/%/*.java)
-	$(JAVAC) $(JDEBUGFLAGS) -classpath lib/othello.jar -d classes/ $(wildcard src/students/$*/*.java)
+space :=
+space +=
+
+lib/%.jar : lib $(shell find src/students/$* -type f -name '*.java')
+	$(JAVAC) $(JDEBUGFLAGS) -classpath $(subst $(space),:,$(NON_STUDENT_JARS)) -d classes/ $(shell find src/students/$* -type f -name '*.java')
 	@echo "Manifest-Version: 1.0" > .manifest.tmp
 	@echo "Main-Class: edu.drexel.cs.ai.othello.Othello" >> .manifest.tmp
 	$(JAR) cmf .manifest.tmp $@ -C classes students/$*
