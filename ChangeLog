@@ -5,6 +5,8 @@ version 2.2
 	* Implemented a custom Java Security Manager to prevent agents
 	  from doing sneaky things like file I/O or spawning helper
 	  threads.
+	* Class names can now be passed on the command line as partial
+	  strings, as long as there is a unique match.
 	
 	Bug Fixes:
 	* Fixed a potential (but not observed) bug in the game engine

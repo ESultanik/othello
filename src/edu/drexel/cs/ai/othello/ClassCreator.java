@@ -16,6 +16,26 @@ import java.util.jar.JarFile;
  */
 class ClassCreator {
 	/**
+	 * Returns a set of all classes whose name contains the given text.
+	 */
+	public static <U> HashSet<Class<? extends U>> getClassesContaining(String text, Class<U> type, boolean caseSensitive) {
+		HashSet<Class<? extends U>> matches = new HashSet<Class<? extends U>>();
+		if(!caseSensitive)
+			text = text.toLowerCase();
+		for(Class<? extends U> c : getClassesOfType(type))
+			if((caseSensitive && c.getName().contains(text)) || (!caseSensitive && c.getName().toLowerCase().contains(text)))
+				matches.add(c);
+		return matches;
+	}
+
+	/**
+	 * Returns a set of all classes whose name contains the given text.
+	 */
+	public static <U> HashSet<Class<? extends U>> getClassesContaining(String text, Class<U> type) {
+		return getClassesContaining(text, type, false);
+	}
+	
+	/**
 	 * Returns the Class object associated with the name of a class.
 	 * This is equivalent to
 	 * <code>ClassLoader.getSystemClassLoader().loadClass(className)</code>.

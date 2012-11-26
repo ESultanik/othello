@@ -2,8 +2,10 @@ package edu.drexel.cs.ai.othello;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -55,9 +57,9 @@ public class Othello {
 			this.state = new GameState(seed);
 		else
 			this.state = new GameState();
-        System.setSecurityManager(jsm);
+		System.setSecurityManager(jsm);
 	}
-	
+
 	private static class JailSecurityManager extends SecurityManager {
 		private HashSet<Thread> restrictedThreads;
 		public JailSecurityManager() {
@@ -101,7 +103,7 @@ public class Othello {
 			validate("This thread may not create or modify any threads, including itself.");
 		}
 	}
-        
+
 	/**
 	 * Attempts to instantiate a new {@link OthelloPlayer} with the
 	 * given <code>playerName</code> from the given class.
@@ -142,7 +144,7 @@ public class Othello {
 			startTime = null;
 			endTime = null;
 		}
-		
+
 		public void terminate() {
 			long startTime = System.currentTimeMillis();
 			boolean printed = false;
@@ -184,7 +186,7 @@ public class Othello {
 			}
 			return move;
 		}
-		
+
 		public long getElapsedMillis() {
 			if(endTime != null && startTime != null)
 				return endTime.getTime() - startTime.getTime();
@@ -232,7 +234,7 @@ public class Othello {
 					log("Randomly moving " + player.getName() + " to " + moves[next].toString() + "...");
 					move = moves[next];
 				}
-				
+
 				validMove = true;
 
 				if(turnDuration <= 0 || player instanceof HumanOthelloPlayer) {
@@ -252,7 +254,7 @@ public class Othello {
 				} else if(move == null) {
 					/* request a garbage collection before we run the AI agent */
 					Runtime.getRuntime().gc();
-					
+
 					/* if we didn't already move the AI player randomly... */
 					PlayerTimerThread ptt = new PlayerTimerThread(player, state);
 					try {
@@ -326,6 +328,29 @@ public class Othello {
 			return className.substring(lastPeriod + 1);
 	}
 
+	static String getPlayerClassName(String partialName) {
+		HashSet<Class<? extends OthelloPlayer>> possiblePlayers = ClassCreator.getClassesContaining(partialName, OthelloPlayer.class);
+		/* remove classes that are not instantiable */
+		Iterator<Class<? extends OthelloPlayer>> iter = possiblePlayers.iterator();
+		while(iter.hasNext()) {
+			Class<? extends OthelloPlayer> c = iter.next();
+			int modifiers = c.getModifiers();
+			if(c.isInterface() || Modifier.isAbstract(modifiers) || Modifier.isPrivate(modifiers) || Modifier.isProtected(modifiers))
+				iter.remove();
+		}
+		if(possiblePlayers.isEmpty()) {
+			System.err.println("Error: Could not find an OthelloPlayer class whose name contains the text \"" + partialName + "\"\n");
+			return null;
+		} else if(possiblePlayers.size() > 1) {
+			System.err.println("Error: There are multiple OthelloPlayer classes whose name contains the text \"" + partialName + "\":");
+			for(Class<? extends OthelloPlayer> c : possiblePlayers)
+				System.err.println("\t" + c.getName());
+			System.err.print("\n");
+			return null;
+		} else
+			return possiblePlayers.iterator().next().getName();
+	}
+		
 	/**
 	 * Instantiates the players, loads the user interface, and plays the game until completion.
 	 */
@@ -337,7 +362,7 @@ public class Othello {
 		long seed = 0;
 		boolean seedSet = false;
 		int turnDuration = -1;
-		
+
 		for(int i=0; i<args.length; i++) {
 			if(!args[i].startsWith("-")) {
 				/**
@@ -393,33 +418,41 @@ public class Othello {
 			players = ui.getPlayers();
 		} else {
 			players = new OthelloPlayer[2];
-			String player1class = sarg[0];
-			String player1name = (sargs > 2 ? sarg[1] : getSimplifiedClassName(player1class));
-			if(player1name.equals(""))
-				player1name = "Player 1";
-			String player2class = (sargs > 2 ? sarg[2] : sarg[1]);
-			String player2name = (sargs > 3 ? sarg[3] : getSimplifiedClassName(player2class));
-			if(player2name.equals(player1name))
-				player2name = player2name + "2";
-			else if(player2name.equals(""))
-				player2name = "Player 2";
-			try {
-				players[0] = instantiatePlayer(player1class, player1name);
-			} catch(NoSuchMethodException nsme1) {
-				System.err.println("Error Instantiating Agent: Make sure the agent class for player 1 (" + player1class + ")\nhas a constructor that accepts a single string as an argument!");
+			String player1class = getPlayerClassName(sarg[0]);
+			if(player1class == null) {
 				printUse = true;
-			} catch(Exception e1) {
-				System.err.println("Error Instantiating Agent: " + e1.toString());
-				printUse = true;
-			}
-			try {
-				players[1] = instantiatePlayer(player2class, player2name);
-			} catch(NoSuchMethodException nsme2) {
-				System.err.println("Error Instantiating Agent: Make sure the agent class for player 2 (" + player2class + ")\nhas a constructor that accepts a single string as an argument!");
-				printUse = true;
-			} catch(Exception e2) {
-				System.err.println("Error Instantiating Agent: " + e2.toString());
-				printUse = true;
+			} else {
+				String player1name = (sargs > 2 ? sarg[1] : getSimplifiedClassName(player1class));
+				if(player1name.equals(""))
+					player1name = "Player 1";
+				String player2class = (sargs > 2 ? getPlayerClassName(sarg[2]) : getPlayerClassName(sarg[1]));
+				if(player2class == null) {
+					printUse = true;
+				} else {
+					String player2name = (sargs > 3 ? sarg[3] : getSimplifiedClassName(player2class));
+					if(player2name.equals(player1name))
+						player2name = player2name + "2";
+					else if(player2name.equals(""))
+						player2name = "Player 2";
+					try {
+						players[0] = instantiatePlayer(player1class, player1name);
+					} catch(NoSuchMethodException nsme1) {
+						System.err.println("Error Instantiating Agent: Make sure the agent class for player 1 (" + player1class + ")\nhas a constructor that accepts a single string as an argument!");
+						printUse = true;
+					} catch(Exception e1) {
+						System.err.println("Error Instantiating Agent: " + e1.toString());
+						printUse = true;
+					}
+					try {
+						players[1] = instantiatePlayer(player2class, player2name);
+					} catch(NoSuchMethodException nsme2) {
+						System.err.println("Error Instantiating Agent: Make sure the agent class for player 2 (" + player2class + ")\nhas a constructor that accepts a single string as an argument!");
+						printUse = true;
+					} catch(Exception e2) {
+						System.err.println("Error Instantiating Agent: " + e2.toString());
+						printUse = true;
+					}
+				}
 			}
 		}
 
@@ -452,7 +485,7 @@ public class Othello {
 
 	static String getVersionInfo() {
 		return "Othello Version " + VERSION + " " + REV_DATE + "\n" +
-				"Copyright 2006--2012, Evan A. Sultanik" + "\n" +
+				"Copyright 2006--" + REV_DATE.substring(0,REV_DATE.indexOf("-")) + ", Evan A. Sultanik" + "\n" +
 				"http://www.sultanik.com/" + "\n" + "\n";
 	}
 
@@ -464,7 +497,7 @@ public class Othello {
 		System.err.println("Usage: othello [options] [player1class [player1name] player2class [player2name]]");
 		System.err.println();
 		System.err.println("  player1class      Class name of the agent for player1");
-		System.err.println("                    (i.e. \"org.drexel.edu.cs.ai.othello.RandomOthelloPlayer\")");
+		System.err.println("                    (i.e., \"org.drexel.edu.cs.ai.othello.RandomOthelloPlayer\")");
 		System.err.println("  player1name       The name for player1 (i.e. \"Evan's Agent\")");
 		System.err.println("  player2class      Class name of the agent for player2");
 		System.err.println("  player2name       The name for player2");
