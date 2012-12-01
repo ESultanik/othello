@@ -12,17 +12,8 @@ public class TournamentUserInterface extends ConsoleUserInterface implements Log
 	public void updateTimeUsed(OthelloPlayer player, long millisUsed) {}
 	
 	public void handleStateUpdate(GameState newState) {
-		switch(newState.getStatus()) {
-		case PLAYER1WON:
-			System.out.println("1");
-			break;
-		case PLAYER2WON:
-			System.out.println("2");
-			break;
-		case TIE:
-			System.out.println("0");
-			break;
-		}
+		if(!newState.getStatus().equals(GameState.GameStatus.PLAYING))
+			System.out.println(newState.getScore(GameState.Player.PLAYER1) + "\t" + newState.getScore(GameState.Player.PLAYER2));
 	}
 
 	@Override
