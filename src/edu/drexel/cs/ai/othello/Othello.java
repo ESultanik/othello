@@ -403,6 +403,9 @@ public class Othello {
 			else if(args[i].equals("-nw")) {
 				ui = new ConsoleUserInterface();
 			}
+			else if(args[i].equals("-t")) {
+				ui = new TournamentUserInterface();
+			}
 			else {
 				System.err.println("Warning: unexpected argument \"" + args[i] + "\"!");
 				printUse = true;		
@@ -506,6 +509,9 @@ public class Othello {
 		System.err.println("         -s  number Seed for the simulator's random number generator.");
 		System.err.println("                    If omitted, time since the epoch is used.");
 		System.err.println("         -nw        Run in console mode (a GUI is used by default)");
+		System.err.println("         -t         Run in tournament mode (nothing is printed except");
+		System.err.println("                    \"1\" if player 1 won, \"2\" if player 2 won, or \"0\" if");
+		System.err.println("                    the game resulted in a tie).");
 		System.err.println("         -d  number Sets the amount of time (in seconds) an agent has to make");
 		System.err.println("                    its decision each turn (i.e. the deadline).");
 		System.err.println("                    A value <= 0 will result in an infinite deadline (this is");
