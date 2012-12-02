@@ -7,11 +7,14 @@ version 2.2
 	  threads.
 	* Class names can now be passed on the command line as partial
 	  strings, as long as there is a unique match.
+	* Added a new user interface for running tournaments.
 	
 	Bug Fixes:
 	* Fixed a potential (but not observed) bug in the game engine
 	  that could cause a weird state, possibly inducing zombie threads,
 	  if an agent throws an uncaught exception in getMove(...).
+	* Fixed a rare race condition in the game engine that can cause a
+	  NullPointerException if the agent's thread exceeds its deadline.
 	  
 	API Changes:
 	* None.
