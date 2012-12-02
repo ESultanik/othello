@@ -2,4 +2,4 @@ for i in lib/*.jar
 do
   CP="${i}:${CP}"
 done
-CLASSPATH=${CP} java edu.drexel.cs.ai.othello.Othello $@
+CLASSPATH=${CP} java -Xmx512M edu.drexel.cs.ai.othello.Othello $@

@@ -6,7 +6,10 @@ import java.lang.reflect.Modifier;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A class for playing the game Othello.
@@ -135,7 +138,10 @@ public class Othello {
 		GameState state;
 		Date startTime;
 		Date endTime;
-
+		private final ReentrantLock threadLock = new ReentrantLock();
+		private final Condition terminated = threadLock.newCondition();
+		private final Condition started = threadLock.newCondition();
+		
 		public PlayerTimerThread(OthelloPlayer player, GameState state) {
 			this.player = player;
 			this.state = state;
@@ -146,27 +152,39 @@ public class Othello {
 		}
 
 		public void terminate() {
-			long startTime = System.currentTimeMillis();
-			boolean printed = false;
-			while(thread != null && thread.isAlive()) {
-				if(!printed && System.currentTimeMillis() - startTime >= 3000) {
-					/* if we have been waiting for three seconds or longer... */
-					log("Waiting for the " + player.getName() + "'s thread to terminate...");
-					printed = true;
+			threadLock.lock();
+			try {
+				long startTime = System.currentTimeMillis();
+				boolean printed = false;
+				while(thread != null && thread.isAlive()) {
+					if(!printed && System.currentTimeMillis() - startTime >= 3000) {
+						/* if we have been waiting for three seconds or longer... */
+						log("Waiting for the " + player.getName() + "'s thread to terminate...");
+						printed = true;
+					}
+					thread.interrupt(); /* wake up the thread if it is sleeping */
+					try {
+						terminated.await(500, TimeUnit.MILLISECONDS);
+					} catch (InterruptedException e) {}
 				}
-				thread.interrupt(); /* wake up the thread if it is sleeping */
-				try {
-					thread.join(500);
-				} catch (InterruptedException e) {}
+				thread = null;
+			} finally {
+				threadLock.unlock();
 			}
-			thread = null;
 		}
 
 		public Square getMove(int timeLimitSeconds) throws TimeoutException {
 			long sleepInterval = ((long)timeLimitSeconds * 1000) / 60;
-			startTime = new Date();
-			deadline = new Date(startTime.getTime() + (long)timeLimitSeconds * 1000);
-			thread.start();
+			threadLock.lock();
+			try {
+				startTime = new Date();
+				deadline = new Date(startTime.getTime() + (long)timeLimitSeconds * 1000);
+				thread.start();
+				started.await();
+			} catch (InterruptedException e) {
+			} finally {
+				threadLock.unlock();
+			}
 			while(move == null && (new Date()).before(deadline)) {
 				try {
 					Thread.yield();
@@ -197,17 +215,24 @@ public class Othello {
 		}
 
 		public void run() {
-			jsm.restrict(thread);
-			Square m = null;
+			threadLock.lock();
+			started.signal();
 			try {
-				m = player.getMoveInternal(state, deadline);
+				jsm.restrict(thread);
+				Square m = null;
+				try {
+					m = player.getMoveInternal(state, deadline);
+				} finally {
+					if(endTime == null)
+						endTime = new Date();
+					if(deadline == null || endTime.compareTo(deadline) <= 0)
+						move = m;
+					jsm.unrestrict(thread);
+					thread = null;
+					terminated.signal();
+				}
 			} finally {
-				if(endTime == null)
-					endTime = new Date();
-				if(deadline == null || endTime.compareTo(deadline) <= 0)
-					move = m;
-				jsm.unrestrict(thread);
-				thread = null;
+				threadLock.unlock();
 			}
 		}
 	}
