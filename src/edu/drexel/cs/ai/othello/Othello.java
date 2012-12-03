@@ -194,7 +194,7 @@ public class Othello {
 			}
 			terminate();
 			if(move == null)
-				throw new TimeoutException(player.getName() + " took to long to move!");
+				throw new TimeoutException(player.getName() + " took too long to move!");
 			if(endTime == null) {
 				Date currTime = new Date();
 				if(currTime.getTime() - startTime.getTime() > (long)timeLimitSeconds * 1000)
