@@ -14,6 +14,7 @@ public class TournamentUserInterface extends ConsoleUserInterface implements Log
 	public void handleStateUpdate(GameState newState) {
 		int move = newState.getScore(newState.getCurrentPlayer()) + newState.getScore(newState.getOpponent(newState.getCurrentPlayer())) - 4;
 		System.out.println("Move " + move);
+		System.out.println("Player " + (newState.getCurrentPlayer() == GameState.Player.PLAYER1 ? "1" : "2"));
 		if(!newState.getStatus().equals(GameState.GameStatus.PLAYING))
 			System.out.println(newState.getScore(GameState.Player.PLAYER1) + "\t" + newState.getScore(GameState.Player.PLAYER2));
 	}
