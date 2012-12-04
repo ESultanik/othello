@@ -49,6 +49,14 @@ public class ConsoleUserInterface implements UserInterface {
 			((HumanOthelloPlayer)currentPlayer).handleUIInput(move);
 		}
 	}
+	
+	protected OthelloPlayer getPlayer1() {
+		return player1;
+	}
+	
+	protected OthelloPlayer getPlayer2() {
+		return player2;
+	}
 
 	/**
 	 * Prints all classes that are <code>instanceof</code>
