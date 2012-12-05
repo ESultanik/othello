@@ -115,7 +115,6 @@ public class GameState implements Cloneable {
 		validMoves2 = null;
 		p1score = -1;
 		p2score = -1;
-		successors = null;
 		hash = null;
 	}
 
@@ -137,7 +136,6 @@ public class GameState implements Cloneable {
 		gs.validMoves2 = null;
 		gs.p1score = -1; /* force a recount of the scores */
 		gs.p2score = -1;
-		gs.successors = null;
 		gs.hash = hash;
 		return gs;
 	}
