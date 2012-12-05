@@ -22,7 +22,6 @@ public class GameState implements Cloneable {
 	private HashSet<Square> validMoves2;
 	private int p1score; /* cache the scores after they're calculated for the first time */
 	private int p2score;
-	private HashSet<GameState> successors;
 	private BigInteger hash;
 
 	/**
@@ -425,10 +424,8 @@ public class GameState implements Cloneable {
 	 * @see #applyMove(Square, boolean)
 	 */
 	public AbstractSet<GameState> getSuccessors(boolean includePreviousStateReference) {
-		if(successors != null)
-			return successors;
 		Square moves[] = getValidMoves().toArray(new Square[0]);
-		successors = new HashSet<GameState>(moves.length);
+		HashSet<GameState> successors = new HashSet<GameState>(moves.length);
 		for(int i=0; i<moves.length; i++) {
 			try {
 				successors.add(applyMove(moves[i], includePreviousStateReference));
