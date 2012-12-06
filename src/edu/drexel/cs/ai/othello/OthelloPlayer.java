@@ -25,6 +25,7 @@ public abstract class OthelloPlayer {
 	private Logger logger;
 	volatile private Square tempMove;
 	volatile private Thread currentThread;
+	volatile private long finalTimeUsed;
 
 	/**
 	 * Creates a new Othello Player
@@ -33,6 +34,7 @@ public abstract class OthelloPlayer {
 		this.name = name;
 		logger = null;
 		currentThread = null;
+		finalTimeUsed = 0;
 	}
 
 	/**
@@ -52,12 +54,14 @@ public abstract class OthelloPlayer {
 	synchronized void playInternal(GameState currentState) {
 		if(currentThread != null)
 			throw new IllegalStateException("getMoveInternal(...) is already being called by another thread (" + currentThread + ")");
-		currentThread = Thread.currentThread();
+		finalTimeUsed = 0;
 		tempMove = null;
+		currentThread = Thread.currentThread();
 		try {
 			play(currentState);
 		} finally {
 			getCurrentThreadCpuTime(); /* a side-effect of this function is to record the last CPU time usage, so run it before we wipe the currentThread and threadBean objects! */
+			finalTimeUsed = getTimeUsed();
 			currentThread = null;
 		}
 	}
@@ -118,7 +122,7 @@ public abstract class OthelloPlayer {
 	 */
 	protected final long getTimeUsed() {
 		if(currentThread == null || !(currentThread instanceof Othello.PlayerTimerThread))
-			return 0;
+			return finalTimeUsed;
 		else
 			return ((Othello.PlayerTimerThread)currentThread).getTimeUsed();
 	}

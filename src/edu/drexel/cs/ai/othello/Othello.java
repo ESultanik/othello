@@ -143,7 +143,7 @@ public class Othello {
 			synchronized(mutex) {
 				if(isAlive() && bean != null) {
 					gettingCpuTime = true;
-					lastCpuTime = bean.getCurrentThreadCpuTime() / 1000000;
+					lastCpuTime = bean.getThreadCpuTime(this.getId()) / 1000000;
 					gettingCpuTime = false;
 				}
 				return lastCpuTime;
@@ -151,8 +151,7 @@ public class Othello {
 		}
 		
 		public long getTimeRemaining() {
-			long cpuTime = getThreadCpuTime(); /* need to run this first, because it ensures that msCpuStart is set! */
-			return (msCpuStart + timeLimitMillis) - cpuTime;
+			return timeLimitMillis - getTimeUsed();
 		}
 		
 		public long getTimeUsed() {
@@ -184,7 +183,7 @@ public class Othello {
 		
 		Square getMove(long timeLimitMillis) throws TimeoutException {
 			synchronized(mutex) {
-				long sleepInterval = timeLimitMillis / 60;
+				long sleepInterval = 500;
 				this.timeLimitMillis = timeLimitMillis;
 				super.start();
 				try {
@@ -195,7 +194,7 @@ public class Othello {
 				while(this.isAlive()) {
 					long timeRemaining = player.getTimeRemaining();
 					if(timeRemaining < Long.MAX_VALUE)
-						ui.updateTimeRemaining(player, (int)(timeRemaining/1000));
+						ui.updateTimeRemaining(player, timeRemaining);
 					try {
 						mutex.wait(sleepInterval);
 					} catch (InterruptedException e1) {}

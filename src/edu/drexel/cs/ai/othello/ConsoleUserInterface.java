@@ -11,6 +11,7 @@ import java.io.*;
 public class ConsoleUserInterface implements UserInterface {
 	private OthelloPlayer player1, player2;
 
+	@Override
 	public void handleStateUpdate(GameState newState) {
 		GameState previous = newState.getPreviousState();
 		String player1name = player1.getName() + " (@)";
@@ -63,6 +64,7 @@ public class ConsoleUserInterface implements UserInterface {
 	 * <code>OthelloPlayer</code> that have been found in the
 	 * classpath and then calls <code>System.exit(1)</code>.
 	 */
+	@Override
 	public OthelloPlayer[] getPlayers() {
 		Othello.printUsage();
 		System.err.println("");
@@ -82,14 +84,17 @@ public class ConsoleUserInterface implements UserInterface {
 		return new OthelloPlayer[0];
 	}
 
+	@Override
 	public void setPlayers(OthelloPlayer player1, OthelloPlayer player2) {
 		this.player1 = player1;
 		this.player2 = player2;
 	}
 
-	public void updateTimeRemaining(OthelloPlayer player, int secondsRemaining) {
+	@Override
+	public void updateTimeRemaining(OthelloPlayer player, long msRemaining) {
 	}
 
+	@Override
 	public void updateTimeUsed(OthelloPlayer player, long millisUsed) {
 		if(!(player instanceof HumanOthelloPlayer))
 			System.out.println("Player " + player.getName() + " has used a total of " + millisUsed + "ms thinking thus far.");

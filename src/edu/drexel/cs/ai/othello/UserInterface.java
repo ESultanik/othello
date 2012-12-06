@@ -24,11 +24,11 @@ public interface UserInterface {
 	/**
 	 * Callback function for updating the amount of time that remains
 	 * before a player's deadline.
-	 * @param secondsRemaining The amount of time in seconds before
+	 * @param msRemaining The amount of time in milliseconds before
 	 * the end of <code>player</code>'s deadline.  A negative value
 	 * indicates that the player has an infinite deadline.
 	 */
-	public void updateTimeRemaining(OthelloPlayer player, int secondsRemaining);
+	public void updateTimeRemaining(OthelloPlayer player, long msRemaining);
 
 	/**
 	 * Callback function for updating the total amount of time (in

@@ -74,6 +74,7 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 		logQueue = new LinkedList<MessageSourcePair>();
 	}
 
+	@Override
 	public void setPlayers(OthelloPlayer player1, OthelloPlayer player2) {
 		this.player1 = player1;
 		this.player2 = player2;
@@ -212,6 +213,7 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 		}
 	}
 
+	@Override
 	public OthelloPlayer[] getPlayers() {
 		GameSelectorDialog gsd = new GameSelectorDialog(this);
 		return new OthelloPlayer[]{gsd.player1, gsd.player2};
@@ -255,6 +257,7 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 		}
 	}
 
+	@Override
 	public void handleStateUpdate(GameState newState) {
 		state = newState;
 		if(player1 == null || player2 == null)
@@ -371,6 +374,7 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 		log(message, null);
 	}
 
+	@Override
 	public void log(String message, Object source) {
 		if(logDocument == null) {
 			logQueue.add(new MessageSourcePair(message, source));
@@ -385,12 +389,13 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 		}
 	}
 
-	public void updateTimeRemaining(OthelloPlayer player, int secondsRemaining) {
+	@Override
+	public void updateTimeRemaining(OthelloPlayer player, long msRemaining) {
 		String sr;
 		if(player instanceof HumanOthelloPlayer)
 			sr = "\u221e"; /* <-- \221e == the infinity symbol */
-		else if(secondsRemaining >= 0)
-			sr = Integer.toString(secondsRemaining) + "s";
+		else if(msRemaining >= 0)
+			sr = Double.toString((double)msRemaining / 1000.0) + "s";
 		else
 			sr = "-";
 		if(player == player1) {
@@ -401,8 +406,11 @@ public class GraphicalUserInterface extends JFrame implements UserInterface, Log
 			timeRemaining1.setText("-");
 			timeRemaining2.setText(sr);
 		}
+		timeRemaining1.repaint();
+		timeRemaining2.repaint();
 	}
 
+	@Override
 	public void updateTimeUsed(OthelloPlayer player, long millisUsed) {
 		String secondsUsed = Double.toString((double)millisUsed / 1000.0);
 		if(player == player1)
