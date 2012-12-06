@@ -1,7 +1,5 @@
 package students.example;
 
-import java.util.Date;
-
 import edu.drexel.cs.ai.othello.GameState;
 import edu.drexel.cs.ai.othello.OthelloPlayer;
 import edu.drexel.cs.ai.othello.Square;
@@ -22,22 +20,19 @@ public class ExampleOthelloPlayer extends OthelloPlayer {
 	/**
 	 * Returns the first move that the agent discovers is valid.
 	 */
-	public Square getMove(GameState currentState, Date deadline) {
-		Square square = currentState.getValidMoves().toArray(new Square[0])[0];
+	@Override
+	public void play(GameState currentState) {
+		if(hasDeadline())
+			log("I have " + this.getTimeRemaining() + "ms remaining until the deadline.");
+		
 		/* register this as our current best move; if there is a deadline and we don't reach it,
 		 * then registering the move will make sure that that is the move we take.
 		 * If we reach the deadline and we neither registered a move nor returned from this
 		 * function, then a move will be chosen for us at random. */
+		Square square = currentState.getValidMoves().toArray(new Square[0])[0];
 		this.registerCurrentBestMove(square);
-		
-		if(deadline != null)
-			log("I have " + this.getMillisUntilDeadline() + "ms remaining until the deadline.");
 		
 		/* registerCurrentBestMove(...) can be called multiple times to reset the current best
 		 * move before returning from this function. */
-		
-		/* return the move that we have chosen */
-		log("Example player is moving to " + square + "...");
-		return square;
 	}
 }

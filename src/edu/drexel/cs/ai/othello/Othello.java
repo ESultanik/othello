@@ -1,15 +1,14 @@
 package edu.drexel.cs.ai.othello;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A class for playing the game Othello.
@@ -23,17 +22,17 @@ public class Othello {
 	private long p2timeUsed;
 	private GameState state;
 	private UserInterface ui;
-	private int turnDuration;
+	private long turnDuration;
 	private static final JailSecurityManager jsm = new JailSecurityManager();
 
 	/**
 	 * The release version of this code.
 	 */
-	public static final String VERSION  = "2.2";
+	public static final String VERSION  = "3.0";
 	/**
 	 * The release date of this code.
 	 */
-	public static final String REV_DATE = "2012-10-21";
+	public static final String REV_DATE = "2012-12-06";
 
 	/**
 	 * Constructs a new othello game with a specific seed to the random number generator.
@@ -54,7 +53,7 @@ public class Othello {
 		this.player2 = player2;
 		p1timeUsed = 0;
 		p2timeUsed = 0;
-		turnDuration = 10;
+		turnDuration = -1;
 		this.ui = ui;
 		if(useSeed)
 			this.state = new GameState(seed);
@@ -63,26 +62,11 @@ public class Othello {
 		System.setSecurityManager(jsm);
 	}
 
-	private static class JailSecurityManager extends SecurityManager {
-		private HashSet<Thread> restrictedThreads;
-		public JailSecurityManager() {
-			restrictedThreads = new HashSet<Thread>();
-		}
-		public void restrict(Thread thread) {
-			synchronized(restrictedThreads) {
-				restrictedThreads.add(thread);
-			}
-		}
-		public void unrestrict(Thread thread) {
-			synchronized(restrictedThreads) {
-				restrictedThreads.remove(thread);
-			}
-		}
+	private final static class JailSecurityManager extends SecurityManager {
+		public JailSecurityManager() {}
 		private void validate(String error) {
-			synchronized(restrictedThreads) {
-				if(restrictedThreads.contains(Thread.currentThread()))
-					throw new SecurityException(error);
-			}
+			if(Thread.currentThread() instanceof PlayerTimerThread)
+				throw new SecurityException(error);
 		}
 		public void checkWrite(String filename) {
 			validate("You cannot write to any files!");
@@ -97,7 +81,8 @@ public class Othello {
 			validate("This thread may not call System.exit()!");
 		}
 		public void checkLink(String lib) {
-			validate("This thread may not call native libraries!");
+			if(!lib.equals("management") || (Thread.currentThread() instanceof PlayerTimerThread && !((PlayerTimerThread)Thread.currentThread()).gettingCpuTime))
+				validate("This thread may not call native libraries!");
 		}
 		public void checkConnect(String host, int port) {
 			validate("This thread may not open sockets!");
@@ -130,109 +115,112 @@ public class Othello {
 		return (OthelloPlayer)o;
 			}
 
-	private class PlayerTimerThread implements Runnable {
-		Thread thread;
-		OthelloPlayer player;
-		Date deadline;
-		Square move;
-		GameState state;
-		Date startTime;
-		Date endTime;
-		private final ReentrantLock threadLock = new ReentrantLock();
-		private final Condition terminated = threadLock.newCondition();
-		private final Condition started = threadLock.newCondition();
+	final class PlayerTimerThread extends Thread {
+		private Object mutex = new Object();
+		private OthelloPlayer player;
+		private GameState state;
+		private long timeLimitMillis;
+		private ThreadMXBean bean;
+		private long lastCpuTime;
+		volatile private long msCpuStart;
+		volatile private boolean gettingCpuTime; 
 		
 		public PlayerTimerThread(OthelloPlayer player, GameState state) {
+			super(player.getName());
 			this.player = player;
 			this.state = state;
-			move = null;
-			thread = new Thread(this);
-			startTime = null;
-			endTime = null;
+			this.bean = null;
+			lastCpuTime = 0;
+			gettingCpuTime = false;
 		}
-
-		public void terminate() {
-			threadLock.lock();
-			try {
+		
+		@Override
+		public void start() {
+			throw new IllegalThreadStateException("A PlayerTimerThread may only start itself!");
+		}
+		
+		public long getThreadCpuTime() {
+			synchronized(mutex) {
+				if(isAlive() && bean != null) {
+					gettingCpuTime = true;
+					lastCpuTime = bean.getCurrentThreadCpuTime() / 1000000;
+					gettingCpuTime = false;
+				}
+				return lastCpuTime;
+			}
+		}
+		
+		public long getTimeRemaining() {
+			long cpuTime = getThreadCpuTime(); /* need to run this first, because it ensures that msCpuStart is set! */
+			return (msCpuStart + timeLimitMillis) - cpuTime;
+		}
+		
+		public long getTimeUsed() {
+			long cpuTime = getThreadCpuTime(); /* need to run this first, because it ensures that msCpuStart is set! */
+			return cpuTime - msCpuStart;
+		}
+		
+		public boolean hasDeadline() {
+			return timeLimitMillis >= 0;
+		}
+		
+		private void terminate() {
+			synchronized(mutex) {
 				long startTime = System.currentTimeMillis();
 				boolean printed = false;
-				while(thread != null && thread.isAlive()) {
+				while(isAlive()) {
 					if(!printed && System.currentTimeMillis() - startTime >= 3000) {
 						/* if we have been waiting for three seconds or longer... */
 						log("Waiting for the " + player.getName() + "'s thread to terminate...");
 						printed = true;
 					}
-					thread.interrupt(); /* wake up the thread if it is sleeping */
+					interrupt(); /* wake up the thread if it is sleeping */
 					try {
-						terminated.await(500, TimeUnit.MILLISECONDS);
+						this.join(500);
 					} catch (InterruptedException e) {}
 				}
-				thread = null;
-			} finally {
-				threadLock.unlock();
 			}
 		}
-
-		public Square getMove(int timeLimitSeconds) throws TimeoutException {
-			long sleepInterval = ((long)timeLimitSeconds * 1000) / 60;
-			threadLock.lock();
-			try {
-				startTime = new Date();
-				deadline = new Date(startTime.getTime() + (long)timeLimitSeconds * 1000);
-				thread.start();
-				started.await();
-			} catch (InterruptedException e) {
-			} finally {
-				threadLock.unlock();
-			}
-			while(move == null && (new Date()).before(deadline)) {
+		
+		Square getMove(long timeLimitMillis) throws TimeoutException {
+			synchronized(mutex) {
+				long sleepInterval = timeLimitMillis / 60;
+				this.timeLimitMillis = timeLimitMillis;
+				super.start();
 				try {
-					Thread.yield();
-					Thread.sleep(sleepInterval);
-				} catch(Exception e) {}
-				ui.updateTimeRemaining(player, (new Long((deadline.getTime() - (new Date()).getTime()) / 1000)).intValue());
-			}
-			terminate();
-			if(move == null)
-				throw new TimeoutException(player.getName() + " took too long to move!");
-			if(endTime == null) {
-				Date currTime = new Date();
-				if(currTime.getTime() - startTime.getTime() > (long)timeLimitSeconds * 1000)
-					endTime = new Date(startTime.getTime() + (long)timeLimitSeconds * 1000);
-				else
-					endTime = currTime;
-			}
-			return move;
-		}
-
-		public long getElapsedMillis() {
-			if(endTime != null && startTime != null)
-				return endTime.getTime() - startTime.getTime();
-			else if(startTime != null)
-				return (new Date()).getTime() - startTime.getTime();
-			else
-				return 0;
-		}
-
-		public void run() {
-			threadLock.lock();
-			started.signal();
-			try {
-				jsm.restrict(thread);
-				Square m = null;
-				try {
-					m = player.getMoveInternal(state, deadline);
-				} finally {
-					if(endTime == null)
-						endTime = new Date();
-					if(deadline == null || endTime.compareTo(deadline) <= 0)
-						move = m;
-					jsm.unrestrict(thread);
-					thread = null;
-					terminated.signal();
+					mutex.wait(); /* wait for the thread to actually start */
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-			} finally {
-				threadLock.unlock();
+				while(this.isAlive()) {
+					long timeRemaining = player.getTimeRemaining();
+					if(timeRemaining < Long.MAX_VALUE)
+						ui.updateTimeRemaining(player, (int)(timeRemaining/1000));
+					try {
+						mutex.wait(sleepInterval);
+					} catch (InterruptedException e1) {}
+					if(!(player instanceof HumanOthelloPlayer) && player.hasDeadline() && player.getTimeRemaining() <= 0) {
+						terminate();
+						throw new TimeoutException(player.getName() + " took too long to move!");
+					}
+				}
+				return player.getCurrentBestMove();
+			}
+		}
+
+		@Override
+		public void run() {
+			synchronized(mutex) {
+				gettingCpuTime = true;
+				bean = ManagementFactory.getThreadMXBean();
+				gettingCpuTime = false;
+				msCpuStart = this.getThreadCpuTime();
+				mutex.notifyAll(); /* let getMove() know that we have started */
+			}
+			player.playInternal(state);
+			synchronized(mutex) {
+				bean = null;
+				mutex.notifyAll(); /* let getMove() know that we have finished */
 			}
 		}
 	}
@@ -262,10 +250,11 @@ public class Othello {
 
 				validMove = true;
 
-				if(turnDuration <= 0 || player instanceof HumanOthelloPlayer) {
+				if(player instanceof HumanOthelloPlayer) {
 					ui.updateTimeRemaining(player, -1); /* there is no limit for humans */
 					Date start = new Date();
-					move = player.getMoveInternal(state, null);
+					player.playInternal(state);
+					move = player.getCurrentBestMove();
 					Date end = new Date();
 					ui.updateTimeRemaining(player, -1); /* there is no limit for humans */
 					if(state.getCurrentPlayer() == GameState.Player.PLAYER1) {
@@ -297,11 +286,11 @@ public class Othello {
 							log("Using " + player.getName() + "'s best move: " + move);
 					}
 					if(state.getCurrentPlayer() == GameState.Player.PLAYER1) {
-						p1timeUsed += ptt.getElapsedMillis();
+						p1timeUsed += player.getTimeUsed();
 						ui.updateTimeUsed(player, p1timeUsed);
 					}
 					else {
-						p2timeUsed += ptt.getElapsedMillis();
+						p2timeUsed += player.getTimeUsed();
 						ui.updateTimeUsed(player, p2timeUsed);
 					}
 				}
@@ -386,7 +375,7 @@ public class Othello {
 		boolean printUse = false;
 		long seed = 0;
 		boolean seedSet = false;
-		int turnDuration = -1;
+		long turnDuration = -1;
 
 		for(int i=0; i<args.length; i++) {
 			if(!args[i].startsWith("-")) {
@@ -422,7 +411,15 @@ public class Othello {
 					printUse = true;
 				}
 				else {
-					turnDuration = Integer.parseInt(args[++i]);
+					String d = args[++i];
+					if(d.endsWith("ms"))
+						turnDuration = Long.parseLong(d.substring(0, d.length() - 2));
+					else if(d.endsWith("m"))
+						turnDuration = Long.parseLong(d.substring(0, d.length() - 1)) * 60000;
+					else if(d.endsWith("s"))
+						turnDuration = Long.parseLong(d.substring(0, d.length() - 1)) * 1000;
+					else
+						turnDuration = Long.parseLong(d) * 1000;
 				}
 			}
 			else if(args[i].equals("-nw")) {
@@ -537,7 +534,9 @@ public class Othello {
 		System.err.println("         -t         Run in tournament mode (nothing is printed except");
 		System.err.println("                    the final score of each player).");
 		System.err.println("         -d  number Sets the amount of time (in seconds) an agent has to make");
-		System.err.println("                    its decision each turn (i.e. the deadline).");
+		System.err.println("                    its decision each turn (i.e., the deadline).");
+		System.err.println("                    \"ms\" or \"m\" can be appended to the number to change the");
+		System.err.println("                    time units to milliseconds or minutes, respectively.");
 		System.err.println("                    A value <= 0 will result in an infinite deadline (this is");
 		System.err.println("                    the default).");
 	}

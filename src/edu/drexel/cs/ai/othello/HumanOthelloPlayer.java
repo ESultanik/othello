@@ -1,7 +1,5 @@
 package edu.drexel.cs.ai.othello;
 
-import java.util.Date;
-
 /**
  * An interface for having a human play othello through the {@link
  * UserInterface user interface}.
@@ -10,6 +8,7 @@ import java.util.Date;
  */
 public final class HumanOthelloPlayer extends OthelloPlayer {
 	Square nextMove;
+	Object mutex;
 
 	/**
 	 * Creates a new agent that plays according to human input.
@@ -17,13 +16,17 @@ public final class HumanOthelloPlayer extends OthelloPlayer {
 	public HumanOthelloPlayer(String name) {
 		super(name);
 		nextMove = null;
+		mutex = new Object();
 	}
 
 	/**
 	 * Callback function for receiving the next move from the UI.
 	 */
 	public void handleUIInput(Square square) {
-		nextMove = square;
+		synchronized(mutex) {
+			nextMove = square;
+			mutex.notifyAll();
+		}
 	}
 
 	/**
@@ -32,16 +35,16 @@ public final class HumanOthelloPlayer extends OthelloPlayer {
 	 * {@link #handleUIInput(Square)} with the next move.  Also, the
 	 * HumanOthelloPlayer agent will always have an infinite deadline.
 	 */
-	public Square getMove(GameState currentState, Date deadline) {
-		while(nextMove == null) {
-			/* wait for the UI to send us the next move */
-			try {
-				Thread.yield();
-				Thread.sleep(10);
-			} catch(Exception e) { }
+	@Override
+	public void play(GameState currentState) {
+		synchronized(mutex) {
+			while(nextMove == null) {
+				try {
+					mutex.wait();
+				} catch (InterruptedException e) {}
+			}
+			registerCurrentBestMove(nextMove);
+			nextMove = null;
 		}
-		Square next = nextMove;
-		nextMove = null;
-		return next;
 	}
 }
