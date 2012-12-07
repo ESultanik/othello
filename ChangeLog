@@ -1,5 +1,20 @@
 Othello Game for Introductory Artificial Intelligence Classes
 
+version 3.0
+	New Features:
+	* Now the agents are timed according to CPU time instead of wall-
+	  clock time.
+
+	Bug Fixes:
+	* Completely re-wrote the agent threading code.  It is now much
+	  cleaner.  Fixed a number of rare race conditions and also
+	  replaced a bunch of busy-waits with semaphores in the process.
+
+	API Changes:
+	* The API for agent implementation has been completely refactored.
+	  The old API has not only been deprecated; it is been completely
+	  removed, hence the major version increment.
+
 version 2.2
 	New Features:
 	* Implemented a custom Java Security Manager to prevent agents

@@ -1,5 +1,10 @@
 Othello Game for Introductory Artificial Intelligence Classes
 
+3.0 (2012-12-05):
+    Evan: Agents are now timed according to their CPU
+	  usage.  Re-wrote the agent threading kernel.
+	  Major refactor of the Agent class API.
+
 2.2 (2012-10-21):
     Evan: Minor bug fixes and improvements to combat
           cheating.
@@ -10,8 +15,8 @@ Othello Game for Introductory Artificial Intelligence Classes
           the case when they miss a deadline.
 
 2.0 (2012-10-14):
-	Evan: Updated release with an Eclipse project and
-	      code updated to the latest Java compiler.
+    Evan: Updated release with an Eclipse project and
+          code updated to the latest Java compiler.
 
 1.0 (2006-10-12):
-	Evan: First release.
+    Evan: First release.
